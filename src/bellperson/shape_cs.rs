@@ -1,14 +1,13 @@
 //! Support for generating R1CS shape using bellperson.
 
+use bellperson::{ConstraintSystem, Index, LinearCombination, SynthesisError, Variable};
+use core::fmt::Write;
+use ff::{Field, PrimeField};
+use group::Group;
 use std::{
   cmp::Ordering,
   collections::{BTreeMap, HashMap},
 };
-
-use crate::traits::Group;
-use bellperson::{ConstraintSystem, Index, LinearCombination, SynthesisError, Variable};
-use core::fmt::Write;
-use ff::{Field, PrimeField};
 
 #[derive(Clone, Copy)]
 struct OrderedVariable(Variable);

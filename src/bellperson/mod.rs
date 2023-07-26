@@ -14,7 +14,7 @@ mod tests {
       shape_cs::ShapeCS,
       solver::SatisfyingAssignment,
     },
-    traits::Group,
+    traits::GroupExt,
   };
   use bellperson::{gadgets::num::AllocatedNum, ConstraintSystem, SynthesisError};
   use ff::PrimeField;
@@ -44,7 +44,7 @@ mod tests {
 
   fn test_alloc_bit_with<G>()
   where
-    G: Group,
+    G: GroupExt,
   {
     // First create the shape
     let mut cs: ShapeCS<G> = ShapeCS::new();

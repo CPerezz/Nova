@@ -1,7 +1,7 @@
 //! Support for generating R1CS witness using bellperson.
 
-use crate::traits::Group;
 use ff::{Field, PrimeField};
+use group::Group;
 
 use bellperson::{
   multiexp::DensityTracker, ConstraintSystem, Index, LinearCombination, SynthesisError, Variable,
