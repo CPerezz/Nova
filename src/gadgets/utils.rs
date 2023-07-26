@@ -1,6 +1,6 @@
 //! This module implements various low-level gadgets
 use super::nonnative::bignat::{nat_to_limbs, BigNat};
-use crate::traits::Group;
+use crate::traits::GroupExt;
 use bellperson::{
   gadgets::{
     boolean::{AllocatedBit, Boolean},
@@ -10,6 +10,7 @@ use bellperson::{
   ConstraintSystem, LinearCombination, SynthesisError,
 };
 use ff::{Field, PrimeField, PrimeFieldBits};
+use group::Group;
 use num_bigint::BigInt;
 
 /// Gets as input the little indian representation of a number and spits out the number
@@ -77,15 +78,18 @@ pub fn alloc_one<F: PrimeField, CS: ConstraintSystem<F>>(
 /// Allocate a scalar as a base. Only to be used is the scalar fits in base!
 pub fn alloc_scalar_as_base<G, CS>(
   mut cs: CS,
-  input: Option<G::Scalar>,
+  input: Option<<G as Group>::Scalar>,
 ) -> Result<AllocatedNum<G::Base>, SynthesisError>
 where
-  G: Group,
+  G: GroupExt,
   <G as Group>::Scalar: PrimeFieldBits,
-  CS: ConstraintSystem<<G as Group>::Base>,
+  CS: ConstraintSystem<G::Base>,
 {
   AllocatedNum::alloc(cs.namespace(|| "allocate scalar as base"), || {
-    let input_bits = input.unwrap_or(G::Scalar::ZERO).clone().to_le_bits();
+    let input_bits = input
+      .unwrap_or(<G as Group>::Scalar::ZERO)
+      .clone()
+      .to_le_bits();
     let mut mult = G::Base::ONE;
     let mut val = G::Base::ZERO;
     for bit in input_bits {
@@ -99,7 +103,7 @@ where
 }
 
 /// interepret scalar as base
-pub fn scalar_as_base<G: Group>(input: G::Scalar) -> G::Base {
+pub fn scalar_as_base<G: GroupExt>(input: <G as Group>::Scalar) -> G::Base {
   let input_bits = input.to_le_bits();
   let mut mult = G::Base::ONE;
   let mut val = G::Base::ZERO;
