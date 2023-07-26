@@ -4,48 +4,21 @@ use bellperson::{
   gadgets::{boolean::AllocatedBit, num::AllocatedNum},
   ConstraintSystem, SynthesisError,
 };
-use core::{
-  fmt::Debug,
-  ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
-};
+use core::fmt::Debug;
 use ff::{PrimeField, PrimeFieldBits};
+use group::Group;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
-
 pub mod commitment;
 
 use commitment::CommitmentEngineTrait;
 
 /// Represents an element of a group
 /// This is currently tailored for an elliptic curve group
-pub trait Group:
-  Clone
-  + Copy
-  + Debug
-  + Eq
-  + Sized
-  + GroupOps
-  + GroupOpsOwned
-  + ScalarMul<<Self as Group>::Scalar>
-  + ScalarMulOwned<<Self as Group>::Scalar>
-  + Send
-  + Sync
-  + Serialize
-  + for<'de> Deserialize<'de>
-{
+pub trait GroupExt: Group + Serialize + for<'de> Deserialize<'de> {
   /// A type representing an element of the base field of the group
   type Base: PrimeField
     + PrimeFieldBits
-    + TranscriptReprTrait<Self>
-    + Serialize
-    + for<'de> Deserialize<'de>;
-
-  /// A type representing an element of the scalar field of the group
-  type Scalar: PrimeField
-    + PrimeFieldBits
-    + PrimeFieldExt
-    + Send
-    + Sync
     + TranscriptReprTrait<Self>
     + Serialize
     + for<'de> Deserialize<'de>;
@@ -60,7 +33,7 @@ pub trait Group:
 
   /// A type that represents a circuit-friendly sponge that consumes elements
   /// from the base field and squeezes out elements of the scalar field
-  type RO: ROTrait<Self::Base, Self::Scalar> + Serialize + for<'de> Deserialize<'de>;
+  type RO: ROTrait<Self::Base, <Self as Group>::Scalar> + Serialize + for<'de> Deserialize<'de>;
 
   /// An alternate implementation of Self::RO in the circuit model
   type ROCircuit: ROCircuitTrait<Self::Base> + Serialize + for<'de> Deserialize<'de>;
@@ -73,7 +46,7 @@ pub trait Group:
 
   /// A method to compute a multiexponentation
   fn vartime_multiscalar_mul(
-    scalars: &[Self::Scalar],
+    scalars: &[<Self as Group>::Scalar],
     bases: &[Self::PreprocessedGroupElement],
   ) -> Self;
 
@@ -121,9 +94,9 @@ pub trait CompressedGroup:
 }
 
 /// A helper trait to absorb different objects in RO
-pub trait AbsorbInROTrait<G: Group> {
+pub trait AbsorbInROTrait<G: GroupExt> {
   /// Absorbs the value in the provided RO
-  fn absorb_in_ro(&self, ro: &mut G::RO);
+  fn absorb_in_ro(&self, ro: &mut <G as GroupExt>::RO);
 }
 
 /// A helper trait that defines the behavior of a hash function that we use as an RO
@@ -176,36 +149,11 @@ pub trait ROConstantsTrait<Base> {
 
 /// An alias for constants associated with G::RO
 pub type ROConstants<G> =
-  <<G as Group>::RO as ROTrait<<G as Group>::Base, <G as Group>::Scalar>>::Constants;
+  <<G as GroupExt>::RO as ROTrait<<G as GroupExt>::Base, <G as Group>::Scalar>>::Constants;
 
 /// An alias for constants associated with G::ROCircuit
 pub type ROConstantsCircuit<G> =
-  <<G as Group>::ROCircuit as ROCircuitTrait<<G as Group>::Base>>::Constants;
-
-/// A helper trait for types with a group operation.
-pub trait GroupOps<Rhs = Self, Output = Self>:
-  Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + AddAssign<Rhs> + SubAssign<Rhs>
-{
-}
-
-impl<T, Rhs, Output> GroupOps<Rhs, Output> for T where
-  T: Add<Rhs, Output = Output> + Sub<Rhs, Output = Output> + AddAssign<Rhs> + SubAssign<Rhs>
-{
-}
-
-/// A helper trait for references with a group operation.
-pub trait GroupOpsOwned<Rhs = Self, Output = Self>: for<'r> GroupOps<&'r Rhs, Output> {}
-impl<T, Rhs, Output> GroupOpsOwned<Rhs, Output> for T where T: for<'r> GroupOps<&'r Rhs, Output> {}
-
-/// A helper trait for types implementing group scalar multiplication.
-pub trait ScalarMul<Rhs, Output = Self>: Mul<Rhs, Output = Output> + MulAssign<Rhs> {}
-
-impl<T, Rhs, Output> ScalarMul<Rhs, Output> for T where T: Mul<Rhs, Output = Output> + MulAssign<Rhs>
-{}
-
-/// A helper trait for references implementing group scalar multiplication.
-pub trait ScalarMulOwned<Rhs, Output = Self>: for<'r> ScalarMul<&'r Rhs, Output> {}
-impl<T, Rhs, Output> ScalarMulOwned<Rhs, Output> for T where T: for<'r> ScalarMul<&'r Rhs, Output> {}
+  <<G as GroupExt>::ROCircuit as ROCircuitTrait<<G as GroupExt>::Base>>::Constants;
 
 /// This trait allows types to implement how they want to be added to TranscriptEngine
 pub trait TranscriptReprTrait<G: Group>: Send + Sync {
@@ -245,4 +193,4 @@ impl<G: Group, T: TranscriptReprTrait<G>> TranscriptReprTrait<G> for &[T] {
 
 pub mod circuit;
 pub mod evaluation;
-pub mod snark;
+//pub mod snark;
