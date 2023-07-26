@@ -8,12 +8,13 @@ use crate::{
     utils::scalar_as_base,
   },
   traits::{
-    commitment::CommitmentEngineTrait, AbsorbInROTrait, Group, ROTrait, TranscriptReprTrait,
+    commitment::CommitmentEngineTrait, AbsorbInROTrait, GroupExt, ROTrait, TranscriptReprTrait,
   },
   Commitment, CommitmentKey, CE,
 };
 use core::{cmp::max, marker::PhantomData};
 use ff::Field;
+use group::Group;
 use itertools::concat;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -397,7 +398,7 @@ impl<G: Group> R1CSInstance<G> {
   }
 }
 
-impl<G: Group> AbsorbInROTrait<G> for R1CSInstance<G> {
+impl<G: GroupExt> AbsorbInROTrait<G> for R1CSInstance<G> {
   fn absorb_in_ro(&self, ro: &mut G::RO) {
     self.comm_W.absorb_in_ro(ro);
     for x in &self.X {
