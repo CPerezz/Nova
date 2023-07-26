@@ -1,14 +1,13 @@
 //! This module defines a collection of traits that define the behavior of a polynomial evaluation engine
 //! A vector of size N is treated as a multilinear polynomial in \log{N} variables,
 //! and a commitment provided by the commitment engine is treated as a multilinear polynomial commitment
-use crate::{
-  errors::NovaError,
-  traits::{commitment::CommitmentEngineTrait, Group},
-};
+use crate::{errors::NovaError, traits::commitment::CommitmentEngineTrait};
 use serde::{Deserialize, Serialize};
 
+use super::GroupExt;
+
 /// A trait that ties different pieces of the commitment evaluation together
-pub trait EvaluationEngineTrait<G: Group>:
+pub trait EvaluationEngineTrait<G: GroupExt>:
   Clone + Send + Sync + Serialize + for<'de> Deserialize<'de>
 {
   /// A type that holds the associated commitment engine
@@ -32,7 +31,7 @@ pub trait EvaluationEngineTrait<G: Group>:
   fn prove(
     ck: &<Self::CE as CommitmentEngineTrait<G>>::CommitmentKey,
     pk: &Self::ProverKey,
-    transcript: &mut G::TE,
+    transcript: &mut <G as GroupExt>::TE,
     comm: &<Self::CE as CommitmentEngineTrait<G>>::Commitment,
     poly: &[G::Scalar],
     point: &[G::Scalar],
@@ -42,7 +41,7 @@ pub trait EvaluationEngineTrait<G: Group>:
   /// A method to verify the purported evaluation of a multilinear polynomials
   fn verify(
     vk: &Self::VerifierKey,
-    transcript: &mut G::TE,
+    transcript: &mut <G as GroupExt>::TE,
     comm: &<Self::CE as CommitmentEngineTrait<G>>::Commitment,
     point: &[G::Scalar],
     eval: &G::Scalar,

@@ -2,7 +2,7 @@
 //! We require the commitment engine to provide a commitment to vectors with a single group element
 use crate::{
   errors::NovaError,
-  traits::{AbsorbInROTrait, Group, TranscriptReprTrait},
+  traits::{AbsorbInROTrait, TranscriptReprTrait},
 };
 use core::{
   fmt::Debug,
@@ -10,7 +10,7 @@ use core::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::ScalarMul;
+use super::GroupExt;
 
 /// Defines basic operations on commitments
 pub trait CommitmentOps<Rhs = Self, Output = Self>:
@@ -34,7 +34,7 @@ impl<T, Rhs, Output> CommitmentOpsOwned<Rhs, Output> for T where
 }
 
 /// This trait defines the behavior of the commitment
-pub trait CommitmentTrait<G: Group>:
+pub trait CommitmentTrait<G: GroupExt>:
   Clone
   + Copy
   + Debug
@@ -49,7 +49,6 @@ pub trait CommitmentTrait<G: Group>:
   + AbsorbInROTrait<G>
   + CommitmentOps
   + CommitmentOpsOwned
-  + ScalarMul<G::Scalar>
 {
   /// Holds the type of the compressed commitment
   type CompressedCommitment: Clone
@@ -66,14 +65,14 @@ pub trait CommitmentTrait<G: Group>:
   fn compress(&self) -> Self::CompressedCommitment;
 
   /// Returns the coordinate representation of the commitment
-  fn to_coordinates(&self) -> (G::Base, G::Base, bool);
+  fn to_coordinates(&self) -> (G::Scalar, G::Scalar, bool);
 
   /// Decompresses a compressed commitment into a commitment
   fn decompress(c: &Self::CompressedCommitment) -> Result<Self, NovaError>;
 }
 
 /// A trait that ties different pieces of the commitment generation together
-pub trait CommitmentEngineTrait<G: Group>:
+pub trait CommitmentEngineTrait<G: GroupExt>:
   Clone + Send + Sync + Serialize + for<'de> Deserialize<'de>
 {
   /// Holds the type of the commitment key
